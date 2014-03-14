@@ -85,6 +85,36 @@ public class BootstrapTemplateTest {
     assertSpotPriceIs(clusterSpec, "role1", 0.1f);
     assertSpotPriceIs(clusterSpec, "role2", 0.3f);
   }
+  
+  @Test
+  public void testSetGlobalSubnetId() throws Exception {
+    ClusterSpec clusterSpec = buildClusterSpecWith(ImmutableMap.of(
+      "whirr.instance-templates", "1 role1",
+      "whirr.aws-ec2-subnet-id", "subnet-31e7b967"
+    ));
+    assertSubnetId(clusterSpec, "role1", "subnet-31e7b967");
+  }
+
+  @Test
+  public void testOverrideSubnetId() throws Exception {
+    ClusterSpec clusterSpec = buildClusterSpecWith(ImmutableMap.of(
+      "whirr.instance-templates", "1 role1",
+      "whirr.aws-ec2-subnet-id", "subnet-31e7b967",
+      "whirr.templates.role1.aws-ec2-spot-price", "0.3"
+    ));
+    assertSubnetId(clusterSpec, "role1", "subnet-31e7b967");
+  }
+
+  @Test
+  public void testDifferentSubnetIds() throws Exception {
+    ClusterSpec clusterSpec = buildClusterSpecWith(ImmutableMap.of(
+      "whirr.instance-templates", "1 role1, 1 role2",
+      "whirr.aws-ec2-subnet-id", "subnet-31e7b967",
+      "whirr.templates.role2.aws-ec2-subnet-id", "subnet-12121212"
+    ));
+    assertSubnetId(clusterSpec, "role1", "subnet-31e7b967");
+    assertSubnetId(clusterSpec, "role2", "subnet-12121212");
+  }  
 
   private ClusterSpec buildClusterSpecWith(Map<String, String> overrides) throws Exception {
     CompositeConfiguration config = new CompositeConfiguration();
@@ -136,4 +166,45 @@ private void assertSpotPriceIs(
 
     verify(awsEec2TemplateOptions).spotPrice(spotPrice);
   }
+  
+  @SuppressWarnings("unchecked")
+  private void assertSubnetId(ClusterSpec clusterSpec, final String templateGroup, String subnetId) 
+          throws MalformedURLException {
+
+      InstanceTemplate instanceTemplate = getOnlyElement(filter(
+        clusterSpec.getInstanceTemplates(),
+        new Predicate<InstanceTemplate>() {
+          private Joiner plusJoiner = Joiner.on("+");
+
+          @Override
+          public boolean apply(InstanceTemplate group) {
+            return plusJoiner.join(group.getRoles()).equals(templateGroup);
+          }
+        }));
+
+      ComputeService computeService = mock(AWSEC2ComputeService.class);
+      ComputeServiceContext context = mock(ComputeServiceContext.class);
+      when(computeService.getContext()).thenReturn(context);
+      when(context.getComputeService()).thenReturn(computeService);
+
+      TemplateBuilder templateBuilder = mock(TemplateBuilder.class);
+      when(computeService.templateBuilder()).thenReturn(templateBuilder);
+      when(templateBuilder.from((TemplateBuilderSpec)any())).thenReturn(templateBuilder);
+      when(templateBuilder.options((TemplateOptions)any())).thenReturn(templateBuilder);
+
+      Template template = mock(Template.class);
+      TemplateOptions options = mock(TemplateOptions.class);
+      Image image = mock(Image.class);
+      when(templateBuilder.build()).thenReturn(template);
+      when(template.getOptions()).thenReturn(options);
+      when(template.getImage()).thenReturn(image);
+
+      AWSEC2TemplateOptions awsEec2TemplateOptions = mock(AWSEC2TemplateOptions.class);
+      when(options.as((Class<TemplateOptions>) any())).thenReturn(awsEec2TemplateOptions);
+
+      BootstrapTemplate.build(clusterSpec, computeService,
+        statementBuilder, instanceTemplate);
+
+      verify(awsEec2TemplateOptions).subnetId(subnetId);
+    }  
 }

@@ -144,6 +144,8 @@ public class ClusterSpec {
       "Valid only for the blob state store. Defaults to whirr-<cluster-name>"),
 
     AWS_EC2_SPOT_PRICE(Float.class, false, "Spot instance price (aws-ec2 specific option)"),
+    AWS_EC2_SUBNET_ID(String.class, false, "The ID of the subnet into which the nodes " + 
+       "will be launched (aws-ec2 specific option)"),
     
     TEMPLATE(String.class, true, "The specification of requirements for instances in jclouds "+
        "TemplateBuilderSpec format.  default. \"osFamily=UBUNTU,osVersionMatches=10.04,minRam=1024\". "+
@@ -300,6 +302,7 @@ public class ClusterSpec {
   private String stateStoreBlob;
 
   private Float awsEc2SpotPrice;
+  private String awsEc2SubnetId;
 
   private String privateKey;
   private File privateKeyFile;
@@ -393,6 +396,7 @@ public class ClusterSpec {
     setStateStoreBlob(getString(Property.STATE_STORE_BLOB));
 
     setAwsEc2SpotPrice(getFloat(Property.AWS_EC2_SPOT_PRICE, (Float) null));
+    setAwsEc2SubnetId(getString(Property.AWS_EC2_SUBNET_ID));
 
     checkAndSetKeyPair();
 
@@ -459,6 +463,7 @@ public class ClusterSpec {
     r.setBlobStoreCacheContainer(getBlobStoreCacheContainer());
 
     r.setAwsEc2SpotPrice(getAwsEc2SpotPrice());
+    r.setAwsEc2SubnetId(getAwsEc2SubnetId());
 
     r.setStateStore(getStateStore());
     r.setStateStoreContainer(getStateStoreContainer());
@@ -700,6 +705,11 @@ public class ClusterSpec {
     return awsEc2SpotPrice;
   }
 
+  @Nullable
+  public String getAwsEc2SubnetId() {
+    return awsEc2SubnetId;
+  }
+
   public String getServiceName() {
     return serviceName;
   }
@@ -854,6 +864,10 @@ public class ClusterSpec {
 
   public void setAwsEc2SpotPrice(@Nullable Float value) {
     this.awsEc2SpotPrice = value;
+  }
+
+  public void setAwsEc2SubnetId(@Nullable String subnetId) {
+      this.awsEc2SubnetId = subnetId;
   }
 
   public void setClusterName(String clusterName) {
@@ -1087,6 +1101,7 @@ public class ClusterSpec {
         && Objects.equal(getStateStoreContainer(), that.getStateStoreContainer())
         && Objects.equal(getStateStoreBlob(), that.getStateStoreBlob())
         && Objects.equal(getAwsEc2SpotPrice(), that.getAwsEc2SpotPrice())
+        && Objects.equal(getAwsEc2SubnetId(), that.getAwsEc2SubnetId())
         && Objects.equal(getAwsEc2PlacementGroup(), that.getAwsEc2PlacementGroup())
         && Objects.equal(getAutoHostnamePrefix(), that.getAutoHostnamePrefix())
         && Objects.equal(getAutoHostnameSuffix(), that.getAutoHostnameSuffix())
@@ -1126,6 +1141,7 @@ public class ClusterSpec {
         getStateStoreBlob(),
         getStateStoreContainer(),
         getAwsEc2SpotPrice(),
+        getAwsEc2SubnetId(),
         getAwsEc2PlacementGroup(),
         getAutoHostnamePrefix(),
         getAutoHostnameSuffix(),
@@ -1163,6 +1179,7 @@ public class ClusterSpec {
       .add("stateStoreContainer", getStateStoreContainer())
       .add("stateStoreBlob", getStateStoreBlob())
       .add("awsEc2SpotPrice", getAwsEc2SpotPrice())
+      .add("awsEc2SubnetId", getAwsEc2SubnetId())
       .add("terminateAllOnLauchFailure",isTerminateAllOnLaunchFailure())
       .add("storeClusterInEtcHosts",isStoreClusterInEtcHosts())
       .add("awsEc2PlacementGroup",getAwsEc2PlacementGroup())

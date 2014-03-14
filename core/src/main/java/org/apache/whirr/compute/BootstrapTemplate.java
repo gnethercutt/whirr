@@ -75,6 +75,7 @@ public class BootstrapTemplate {
         clusterSpec.getTemplate());
     Template template = templateBuilder.build();
     template.getOptions().runScript(bootstrap);
+    setSubnetIdIfSpecified(computeService.getContext(), clusterSpec, template, instanceTemplate);
     return setSpotInstancePriceIfSpecified(
       computeService.getContext(), clusterSpec, template, instanceTemplate
     );
@@ -91,7 +92,19 @@ public class BootstrapTemplate {
         disablePasswordBasedAuth())
     );
   }
-
+  
+  /**
+   * Set the target subnetId, if specified, to support VPC deployments.
+   */
+  private static Template setSubnetIdIfSpecified(ComputeServiceContext context, ClusterSpec spec, Template template, InstanceTemplate instanceTemplate) {
+    if (AWSEC2ComputeService.class.isInstance(context.getComputeService())) {
+        String subnetId = instanceTemplate.getAwsEc2SubnetId() != null ? instanceTemplate.getAwsEc2SubnetId() :
+            spec.getAwsEc2SubnetId();
+        template.getOptions().as(AWSEC2TemplateOptions.class).subnetId(subnetId);
+    }
+    return template;
+  }
+  
   /**
    * Set maximum spot instance price based on the configuration
    */

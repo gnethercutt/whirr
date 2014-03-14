@@ -79,6 +79,15 @@ public class ClusterSpecTest {
     assertEquals(spec.getAwsEc2SpotPrice(), new Float(0.3));
   }
   
+  @Test
+  public void testAwsEc2SubnetId() throws ConfigurationException {
+    assertEquals(ClusterSpec.withNoDefaults(new PropertiesConfiguration()).getAwsEc2SpotPrice(), null);
+    Configuration conf = new PropertiesConfiguration();
+    conf.setProperty(ClusterSpec.Property.AWS_EC2_SUBNET_ID.getConfigName(), "subnet-31e7b967");
+    ClusterSpec spec = ClusterSpec.withNoDefaults(conf);
+    assertEquals(spec.getAwsEc2SubnetId(), "subnet-31e7b967");
+  }
+  
   /**
    * @see ConfigToTemplateBuilderSpecTest for more
    */

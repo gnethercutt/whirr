@@ -58,6 +58,7 @@ public class InstanceTemplate {
     private int minNumberOfInstances = -1;
     private TemplateBuilderSpec template;
     private Float awsEc2SpotPrice;
+    private String awsEc2SubnetId;
     private Set<String> roles;
 
     public Builder numberOfInstance(int numberOfInstances) {
@@ -80,6 +81,11 @@ public class InstanceTemplate {
       return this;
     }
 
+    public Builder awsEc2SubnetId(@Nullable String awsEc2SubnetId) {
+      this.awsEc2SubnetId = awsEc2SubnetId;
+      return this;
+    }
+    
     public Builder roles(String... roles) {
       this.roles = newLinkedHashSet(newArrayList(roles));
       return this;
@@ -95,7 +101,7 @@ public class InstanceTemplate {
         minNumberOfInstances = numberOfInstances;
       }
       return new InstanceTemplate(numberOfInstances, minNumberOfInstances, roles,
-        template, awsEc2SpotPrice);
+      template, awsEc2SpotPrice, awsEc2SubnetId);
     }
   }
 
@@ -103,11 +109,12 @@ public class InstanceTemplate {
   private int minNumberOfInstances;  // some instances may fail, at least a minimum number is required
   private TemplateBuilderSpec template;
   private Float awsEc2SpotPrice;
+  private String awsEc2SubnetId;
   private Set<String> roles;
 
 
   private InstanceTemplate(int numberOfInstances, int minNumberOfInstances,
-      Set<String> roles, TemplateBuilderSpec template, Float awsEc2SpotPrice) {
+      Set<String> roles, TemplateBuilderSpec template, Float awsEc2SpotPrice, String awsEc2SubnetId) {
     for (String role : roles) {
       checkArgument(!StringUtils.contains(role, " "),
         "Role '%s' may not contain space characters.", role);
@@ -117,6 +124,7 @@ public class InstanceTemplate {
     this.minNumberOfInstances = minNumberOfInstances;
     this.template = template;
     this.awsEc2SpotPrice = awsEc2SpotPrice;
+    this.awsEc2SubnetId = awsEc2SubnetId; 
     this.roles = roles;
   }
 
@@ -141,6 +149,11 @@ public class InstanceTemplate {
   public Float getAwsEc2SpotPrice() {
     return awsEc2SpotPrice;
   }
+  
+  @Nullable
+  public String getAwsEc2SubnetId() {
+      return awsEc2SubnetId;
+  }
 
   public boolean equals(Object o) {
     if (o instanceof InstanceTemplate) {
@@ -149,6 +162,7 @@ public class InstanceTemplate {
         && minNumberOfInstances == that.minNumberOfInstances
         && Objects.equal(template, that.template)
         && awsEc2SpotPrice == that.awsEc2SpotPrice
+        && awsEc2SubnetId == that.awsEc2SubnetId
         && Objects.equal(roles, that.roles);
     }
     return false;
@@ -156,7 +170,7 @@ public class InstanceTemplate {
 
   public int hashCode() {
     return Objects.hashCode(numberOfInstances, minNumberOfInstances,
-             template, awsEc2SpotPrice, roles);
+             template, awsEc2SpotPrice, awsEc2SubnetId, roles);
   }
 
   public String toString() {
@@ -165,6 +179,7 @@ public class InstanceTemplate {
       .add("minNumberOfInstances", minNumberOfInstances)
       .add("template", template)
       .add("awsEc2SpotPrice", awsEc2SpotPrice)
+      .add("awsEc2SubnetId", awsEc2SubnetId)
       .add("roles", roles)
       .toString();
   }
@@ -231,6 +246,7 @@ public class InstanceTemplate {
               .join(templateParams)));
     }
     templateBuilder.awsEc2SpotPrice(configuration.getFloat("whirr.templates." + templateGroup + ".aws-ec2-spot-price", null));
+    templateBuilder.awsEc2SubnetId(configuration.getString("whirr.templates." + templateGroup + ".aws-ec2-subnet-id", null));
   }
 
   private static int parseMinNumberOfInstances(
